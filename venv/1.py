@@ -2,6 +2,7 @@ import requests
 from datetime import datetime, timedelta
 import pymorphy2
 import collections
+from terminaltables import AsciiTable
 
 from bs4 import BeautifulSoup
 
@@ -19,13 +20,18 @@ def date_checker(date):
         mounth = mounthes.index(date.split()[1]) + 1
         post_date = datetime.strptime(str(day) + str(mounth) + "2018", '%d%m%Y').date()
 
-    print("Date: " + str(post_date))
     first_week_day = post_date - timedelta(post_date.weekday())
     last_week_day = first_week_day - timedelta(days=6)
     return str(first_week_day) + " - " + str(last_week_day)
 
+try:
+    page = int(input("С какой страницы парсить?"))
+    page_end = int(input("По какую?"))
+except(Exception):
+    print("Неверно введены даныне")
+    exit(1)
 result = {}
-for page_number in range(11,22):
+for page_number in range(page, page_end):
     print('Парсим {0} страницу'.format(page_number))
     r = requests.get('https://habr.com/all/page{0}'.format(page_number))
     soup = BeautifulSoup(r.text, 'html.parser')
@@ -40,6 +46,11 @@ for page_number in range(11,22):
                     result[post_week].append(word_analyzer.normal_form)
         except Exception:
             pass
-
+table_data = [
+    ['Дата', 'Ключевые слова'],
+]
 for key, value in result.items():
-    print(key + ':' + str(collections.Counter(result[key]).most_common(3)))
+    table_data.append([key, str(collections.Counter(result[key]).most_common(3))])
+
+table = AsciiTable(table_data)
+print(table.table)
